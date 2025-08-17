@@ -9,6 +9,8 @@ import zipfile
 from pathlib import Path
 from datetime import datetime
 from typing import List,Dict,Tuple
+from colorama import init, Fore, Style
+init(autoreset=True) 
 
 
 File_TYPES: Dict[str,List[str]] = {
@@ -105,17 +107,17 @@ def save_json(path: Path, data):
 
 def organize(target: Path, by_date: bool, dry_run: bool) -> None:
     if not target.exists() or not target.is_dir():
-        print(f"❌ Path not found or not a directory: {target}")
+        print(f"{Fore.RED}❌ Path not found or not a directory: {target}")
         sys.exit(1)
 
-    print(f"🗂️  Organizing: {target.resolve()}")
+    print(f"{Fore.RED}{Style.BRIGHT}🗂️  Organizing: {target.resolve()}")
     if dry_run:
-        print("🔎 Dry-run mode: no files will be moved.\n")
+        print(f"{Fore.YELLOW}🔎 Dry-run mode: no files will be moved.\n")
 
     files = list(iter_files(target))
     total = len(files)
     if total == 0:
-        print("ℹ️  No files found in the target folder.")
+        print(f"{Fore.MAGENTA}ℹ️  No files found in the target folder.")
         return
 
     seen_hashes: Dict[str, Path] = {}
@@ -135,7 +137,7 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
         try:
             file_hash = md5sum(f)
         except Exception as e:
-            print(f"⚠️  Skipping (hash error): {f.name} ({e})")
+            print(f"{Fore.YELLOW}⚠️  Skipping (hash error): {f.name} ({e})")
             continue
 
         if file_hash in seen_hashes:
@@ -144,6 +146,7 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
             duplicates.append({"src": str(f), "dst": str(dst)})
             if not dry_run:
                 moves_log.append({"src": str(f), "dst": str(dst)})
+            print(f"{Fore.RED}💾 Duplicate moved: {f.name}")
             continue
         else:
             seen_hashes[file_hash] = f
@@ -158,11 +161,12 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
             dst = target / cat / f.name
 
         if f == dst:
-            continue  # already in place
+            continue
 
         move_file(f, dst, dry_run)
         if not dry_run:
             moves_log.append({"src": str(f), "dst": str(dst)})
+        print(f"{Fore.GREEN}✅ Moved: {f.name} → {dst}")
 
     elapsed = time.time() - start
 
@@ -182,18 +186,19 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
         )
 
     organized = sum(summary.values())
-    print("\n✅ Organization complete!" if not dry_run else "\n✅ Dry-run summary")
-    print(f"   • Scanned files      : {humanize(total)}")
-    print(f"   • Organized (kept)   : {humanize(organized)}")
-    print(f"   • Duplicates moved   : {humanize(len(duplicates))}")
+    print(f"\n{Fore.YELLOW}✅ Organization complete!" if not dry_run else f"\n{Fore.YELLOW}✅ Dry-run summary")
+    print(f"   • Scanned files      : {Fore.MAGENTA}{humanize(total)}{Style.RESET_ALL}")
+    print(f"   • Organized (kept)   : {Fore.GREEN}{humanize(organized)}{Style.RESET_ALL}")
+    print(f"   • Duplicates moved   : {Fore.RED}{humanize(len(duplicates))}{Style.RESET_ALL}")
     if summary:
         print("   • Breakdown by category:")
         for cat, n in sorted(summary.items(), key=lambda x: (-x[1], x[0])):
-            print(f"     - {cat:<10} → {humanize(n)}")
-    print(f"\n⏱️  Time taken: {elapsed:.2f}s")
+            print(f"     - {Fore.CYAN}{cat:<10}{Style.RESET_ALL} → {Fore.GREEN}{humanize(n)}{Style.RESET_ALL}")
+    print(f"\n⏱️  Time taken: {Fore.MAGENTA}{elapsed:.2f}s{Style.RESET_ALL}")
     if not dry_run:
-        print(f"🧾 Report saved: {REPORT_NAME}")
-        print(f"🪵 Undo log   : {LOG_NAME}")
+        print(f"🧾 Report saved: {Fore.WHITE}{REPORT_NAME}{Style.RESET_ALL}")
+        # print(f"🪵 Undo log   : {Fore.WHITE}{LOG_NAME}{Style.RESET_ALL}")
+    print(f"{Fore.YELLOW} {Style.BRIGHT}✨Thank You!{Style.RESET_ALL}")
 
 
 def undo_last(target: Path, dry_run: bool) -> None:
@@ -265,8 +270,8 @@ def build_parser():
 def main():
     parser = build_parser()
     args = parser.parse_args()
-
-    target = Path(os.path.expanduser(args.path)).resolve()
+    raw_path = args.path.replace("\\", "/") 
+    target = Path(os.path.expanduser(raw_path)).resolve()
 
     if args.command == "organize":
         organize(target, by_date=args.by_date, dry_run=args.dry_run)
@@ -274,6 +279,7 @@ def main():
         undo_last(target, dry_run=args.dry_run)
     else:
         parser.print_help()
+
 
 
 if __name__ == "__main__":
