@@ -146,7 +146,7 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
             duplicates.append({"src": str(f), "dst": str(dst)})
             if not dry_run:
                 moves_log.append({"src": str(f), "dst": str(dst)})
-            print(f"{Fore.RED}💾 Duplicate moved: {f.name}")
+            # print(f"{Fore.RED}💾 Duplicate moved: {f.name}")
             continue
         else:
             seen_hashes[file_hash] = f
@@ -166,7 +166,7 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
         move_file(f, dst, dry_run)
         if not dry_run:
             moves_log.append({"src": str(f), "dst": str(dst)})
-        print(f"{Fore.GREEN}✅ Moved: {f.name} → {dst}")
+        # print(f"{Fore.GREEN}✅ Moved: {f.name} → {dst}")
 
     elapsed = time.time() - start
 
@@ -189,7 +189,7 @@ def organize(target: Path, by_date: bool, dry_run: bool) -> None:
     print(f"\n{Fore.YELLOW}✅ Organization complete!" if not dry_run else f"\n{Fore.YELLOW}✅ Dry-run summary")
     print(f"   • Scanned files      : {Fore.MAGENTA}{humanize(total)}{Style.RESET_ALL}")
     print(f"   • Organized (kept)   : {Fore.GREEN}{humanize(organized)}{Style.RESET_ALL}")
-    print(f"   • Duplicates moved   : {Fore.RED}{humanize(len(duplicates))}{Style.RESET_ALL}")
+    # print(f"   • Duplicates moved   : {Fore.RED}{humanize(len(duplicates))}{Style.RESET_ALL}")
     if summary:
         print("   • Breakdown by category:")
         for cat, n in sorted(summary.items(), key=lambda x: (-x[1], x[0])):
